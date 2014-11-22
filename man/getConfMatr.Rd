@@ -25,6 +25,7 @@ irisData  <- iris[,-5]
 ens <- cfBuild(irisData, irisClass, bootNum = 100, ensNum = 100, parallel = TRUE, 
                cpus = 4, type = "SOCK")
 
+# Get the confusion matrix summarising the performance of the ensemble
 getConfMatr(ens)
 }
 }

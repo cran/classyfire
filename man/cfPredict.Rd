@@ -34,12 +34,10 @@ ens <- cfBuild(irisData, irisClass, bootNum = 100, ensNum = 100, parallel = TRUE
 
 # Randomly generate test data to find out their classes using the generated ensemble
 # 400 points are selected at random, which results in 100 samples (rows).
-
-testMatr <-matrix(runif(400)*100, ncol=4)           
-
 # Predict the classes of the data using the classifiers in the constructed ensemble
 
-predRes <- cfPredict(ens, testMatr)
+testMatr <- matrix(runif(400)*100, ncol=4)           
+predRes  <- cfPredict(ens, testMatr)
 }
 }
 \keyword{classif}

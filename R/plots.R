@@ -1,157 +1,183 @@
-# Plot functions
+# ************************************************************************
+# Main functions for plotting
+# 
+# Functions: 
+#    ggEnsTrend:    (Line)Plot of the average test accuracies for every new classifier added in the ensemble
+#    ggEnsHist:     Histogram of the ensemble results
+#    ggClassPred:   Barplots of the Correctly Classified Samples
+#    ggPermHist:    Histogram of permutation results
+#
+# ************************************************************************
 
-ggEnsTrend <- function(ensObj, xlabel = NULL, ylabel=NULL, showText=FALSE, xlims=NULL, ylims= NULL, ...) {
-  Ensemble <- Avg_Acc <- NULL 
+
+# Plot the average test accuracies for every new classifier added in the ensemble
+ggEnsTrend <- function(ensObj, xlabel = NULL, ylabel=NULL, showText=FALSE, xlims=NULL, ylims= NULL){
+  Ensemble <- AvgAcc <- NULL 
   
   ensAcc  <- getAcc(ensObj)$Test
   meanVal <- ensAcc[1]
+  ensNum  <- length(getAcc(ensObj)$Test)
   
+  # Calculate the average accuracies for every added classifier 
   for (i in 2:length(ensAcc)) {
     meanVal <- c(meanVal, mean(ensAcc[1:i]))
   }
   
-  avgAcc <- cbind (1:length(ensObj), meanVal)
-  avgAcc <- as.data.frame(avgAcc)
-  colnames(avgAcc) <- c("Ensemble","Avg_Acc")
+  # Store the ensemble num (iter num) and mean accuracies in a data frame 
+  avgAcc <- data.frame(1:ensNum, meanVal)
+  colnames(avgAcc) <- c("Ensemble","AvgAcc")
   
-  p <- ggplot(avgAcc, aes(Ensemble, Avg_Acc)) + geom_point(aes(colour = Avg_Acc), size = 2.3) + geom_line(linetype="dotted") + theme(legend.position = "none")  
+  # Create the ggplot
+  ggLinePlot <- ggplot(data=avgAcc, aes(x=Ensemble, y=AvgAcc)) + 
+                geom_point(aes(colour=AvgAcc), size=2.3) + 
+                geom_line(linetype="dotted") + 
+                theme(legend.position = "none")  
   
-  if (is.null(xlabel)) {xlabel ="Ensemble Iteration"}
-  if (is.null(ylabel)) {ylabel ="Average Test Accuracy"}
   
-  p <- p +xlab(xlabel) + ylab(ylabel) 
+  if (is.null(xlabel)) { xlabel="Ensemble Iteration" }
+  if (is.null(ylabel)) { ylabel="Average Test Accuracy" }
+  ggLinePlot <- ggLinePlot + xlab(xlabel) + ylab(ylabel) 
   
-  if (showText == TRUE) {p <- p + geom_text(data = avgAcc, aes(Ensemble, Avg_Acc, label = paste(round(Avg_Acc, digits=2),"%",sep="")), vjust = -0.8, size=3.5)  }
+  # If showText is TRUE, add the values as text in the plot 
+  if (showText == TRUE) { ggLinePlot <- ggLinePlot + geom_text(data=avgAcc, aes(x=Ensemble, y=AvgAcc, label=paste(round(AvgAcc,digits=2),"%",sep="")), vjust=-0.8, size=3.5) }
   
-  if (length(xlims) == 2) { p <- p + xlim(xlims)}
-  if (length(ylims) == 2) { p <- p + ylim(ylims)}
+  # Set the limits for the x and y axes if provided
+  if (length(xlims) == 2){ ggLinePlot <- ggLinePlot + xlim(xlims) }
+  if (length(ylims) == 2){ ggLinePlot <- ggLinePlot + ylim(ylims) }
   
-  return(p)
+  return(ggLinePlot)
 }
 
 
+# Histogram of the ensemble results 
 ggEnsHist <- function (ensObj, density = FALSE, percentiles = FALSE, mean = FALSE, median = FALSE) {
   Accuracies <- ..density.. <- ..count.. <- NULL 
   
+  # Get the accuracies within the ensemble and the average accuracy
   avgVal <- getAvgAcc(ensObj)$Test
-  ensAcc <- getAcc(ensObj)$Test
-  ensAcc <- as.data.frame(ensAcc)
+  ensAcc <- data.frame(getAcc(ensObj)$Test)
   colnames(ensAcc) <- "Accuracies"
   
+  # Calculate the upper and lower percentile 
   upper <- mean(as.vector(as.matrix(ensAcc))) + 2*sd(as.vector(as.matrix(ensAcc)))
   lower <- mean(as.vector(as.matrix(ensAcc))) - 2*sd(as.vector(as.matrix(ensAcc)))
   
-  if (density == TRUE){
-    m <- ggplot(ensAcc, aes(x=Accuracies, y=..density..)) + 
-      geom_histogram(binwidth=2, colour="#999999", fill="white") +
-      geom_density(alpha=.2, fill="white", colour="#333333")  
+  if (density == TRUE) {
+    # Use density
+    histPlot <- ggplot(data=ensAcc, aes(x=Accuracies, y=..density..)) + 
+                geom_histogram(binwidth=2, colour="#999999", fill="white") +
+                geom_density(alpha=.2, fill="white", colour="#333333")  
   } else {
-    m <- ggplot(ensAcc, aes(x=Accuracies, y=..count..)) + 
-      geom_histogram(binwidth=2, colour="#999999", fill="white")
+    # Use counts/frequency
+    histPlot <- ggplot(data=ensAcc, aes(x=Accuracies, y=..count..)) + 
+                geom_histogram(binwidth=2, colour="#999999", fill="white")
   }
   
-  if (percentiles == TRUE){
-    m <- m + geom_vline(xintercept=lower, color="purple", linetype="dashed", size=0.8) + 
-      geom_vline(xintercept=upper, color="purple", linetype="dashed", size=0.8)  
+  # Plot the percentiles 
+  if (percentiles == TRUE) {
+    histPlot <- histPlot + geom_vline(xintercept=lower, color="purple", linetype="dashed", size=0.8) + 
+                           geom_vline(xintercept=upper, color="purple", linetype="dashed", size=0.8)  
   }
   
-  if (mean   == TRUE){ m <- m + geom_vline(xintercept=mean(getAcc(ensObj)$Test), color="red", linetype="dashed", size=0.8)  }
+  # Plot the mean 
+  if (mean == TRUE) { histPlot <- histPlot + geom_vline(xintercept=mean(getAcc(ensObj)$Test), color="red", linetype="dashed", size=0.8) }
   
-  if (median == TRUE){ m <- m + geom_vline(xintercept=median(getAcc(ensObj)$Test), color="cyan", linetype="dashed", size=0.8) }
+  # Plot the median
+  if (median == TRUE) { histPlot <- histPlot + geom_vline(xintercept=median(getAcc(ensObj)$Test), color="cyan", linetype="dashed", size=0.8) }
   
-  return(m)
+  return(histPlot)
 }
 
-# Correctly Classified Samples
 
-ggClassPred <- function(ensObj, position = "stack", displayAll = FALSE, showText=FALSE, xlabel = NULL, ylabel=NULL, ...) {
-  InitClass <- PredClass <- Class <- Percentage <- predictions <- p <- NULL 
+# Barplots of the Correctly Classified Samples
+ggClassPred <- function(ensObj, position = "stack", displayAll = FALSE, showText=FALSE, xlabel = NULL, ylabel=NULL, cbPalette = FALSE, fillBrewer = FALSE) {
+  InitClass <- PredClass <- Class <- Percentage <- predictions <- classPlot <- NULL 
   
+  # Define a color-blind-friendly palette 
+  cbColors  <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+  
+  # Show all classes simultaneously
   if (displayAll == FALSE) {
-    predictions <- as.data.frame(cbind(colnames(getConfMatr(ensObj)), diag(getConfMatr(ensObj))))
-    colnames(predictions) = c("Class", "Percentage")
+    predictions <- data.frame(colnames(getConfMatr(ensObj)), diag(getConfMatr(ensObj)))
+    colnames(predictions) <- c("Class", "Percentage")
     
-    p<-ggplot(data = predictions, aes(x = Class, y=as.numeric(as.vector(Percentage)), fill=Class)) + 
-      geom_bar(width=0.5, stat="identity", ...)+ theme_bw() + 
-      xlab("\nClasses") + ylab("Percentages of Correctly Classified Samples per Class (%)\n") +
-      theme(axis.text=element_text(size=12), axis.title=element_text(size=12))
+    classPlot <- ggplot(data=predictions, aes(x=Class, y=as.numeric(as.vector(Percentage)), fill=Class)) + 
+                 geom_bar(width=0.3, stat="identity") + theme_bw() + 
+                 xlab("\nClasses") + ylab("Percentages of Correctly Classified Samples per Class (%)\n") +
+                 theme(axis.text=element_text(size=12), axis.title=element_text(size=12), legend.title=element_blank()) 
     
-    if (showText == TRUE) {
-      p <- p + geom_text(data=predictions, aes(x=Class, y=as.numeric(as.vector(Percentage)), 
-                                               label=paste(as.vector(Percentage),"%",sep="")), 
-                                               vjust=-0.5, size=3.7) 
-    }
+    # If showText is TRUE, add the values as text in the plot
+    if (showText == TRUE) { 
+      classPlot <- classPlot + geom_text(data=predictions, aes(x = Class, y = as.numeric(as.vector(Percentage)), label=paste(as.vector(Percentage),"%",sep="")), vjust=-0.5, size=3.7) 
+    } 
   } else {
     predictions <- as.data.frame(ftable(getConfMatr(ensObj), row.vars = 2:1))
     colnames(predictions) <- c("PredClass", "InitClass", "Percentage")
     
-    p<-ggplot(predictions, aes(InitClass, y=as.numeric(as.vector(Percentage)), fill=PredClass, ymin=0, ymax=100)) + 
-      geom_bar(width=0.5, stat="identity", position = position, ...)+ theme_bw() + 
-      theme(axis.text=element_text(size=12), axis.title=element_text(size=12))
+    classPlot <- ggplot(data = predictions, aes(x=InitClass, y=as.numeric(as.vector(Percentage)), fill=PredClass, ymin=0, ymax=100)) + 
+                 geom_bar(width=0.3, stat="identity", position=position) + theme_bw() + 
+                 theme(axis.text=element_text(size=12), axis.title=element_text(size=12)) 
     
+    # If showText is TRUE, add the values as text in the plot
     if (showText == TRUE) {
       if (position == "stack") {
-        p <- p + geom_text(data=predictions, aes(x=InitClass, y=as.numeric(as.vector(Percentage)), 
-                                                 label=ifelse(Percentage>0, paste(as.vector(Percentage),"%",sep=""), "")), 
-                           size=3.7, position = "stack", ...) 
+        # Position stack
+        classPlot <- classPlot + geom_text(data=predictions, aes(x=InitClass, y=as.numeric(as.vector(Percentage)), label=ifelse(Percentage>0, paste(as.vector(Percentage),"%",sep=""), "")), size=3.7, position="stack") 
       } else {
-        p <- p + geom_text(data=predictions, aes(x=InitClass, y=as.numeric(as.vector(Percentage)), 
-                                                 label=paste(as.vector(Percentage),"%",sep="")), size=3.7, 
-                           position = position_dodge(width=0.5))
+        # Position dodge
+        classPlot <- classPlot + geom_text(data=predictions, aes(x=InitClass, y=as.numeric(as.vector(Percentage)), label=paste(as.vector(Percentage),"%",sep="")), size=3.7, position=position_dodge(width=0.5))
       }
     }
   }
   
-  if (is.null(xlabel)) {xlabel ="\nClasses"}
-  if (is.null(ylabel)) {ylabel ="Percentages of Class Predictions (%)\n"}
+  # If color-blind-friendly palette selected
+  if (cbPalette == TRUE)  { classPlot <- classPlot + scale_fill_manual(values=cbColors) }
   
-  p <- p +xlab(xlabel) + ylab(ylabel)
+  # If brewer palette selected
+  if (fillBrewer == TRUE) { classPlot <- classPlot + scale_fill_brewer() }
   
-  return(p)
+  # If no x and y axes titles provided, use the default
+  if (is.null(xlabel)) { xlabel="\nClasses" }
+  if (is.null(ylabel)) { ylabel="Percentages of Class Predictions (%)\n" }
+  classPlot <- classPlot + xlab(xlabel) + ylab(ylabel)
+  
+  return(classPlot)
 }
 
-
-ggPermHist <- function(permObj, density = FALSE, percentiles = FALSE, mean = FALSE, median = FALSE, ...) {
+# Histogram of permutation results 
+ggPermHist <- function(permObj, density = FALSE, percentiles = FALSE, mean = FALSE, median = FALSE) {
   Accuracies <- x <- y <- ..density.. <- ..count.. <- NULL 
   
-  permAcc <- as.data.frame(permObj$avgTestAcc)
+  # Get the permutation results and store in a data frame
+  permAcc <- as.data.frame(permObj$avgAcc)
   colnames(permAcc) <- "Accuracies"
   
+  # Calculate the upper and lower percentile
   upper <- mean(as.vector(as.matrix(permAcc))) + 2*sd(as.vector(as.matrix(permAcc)))
   lower <- mean(as.vector(as.matrix(permAcc))) - 2*sd(as.vector(as.matrix(permAcc)))
   
   if (density == TRUE){
-    m <- ggplot(permAcc, aes(x=Accuracies, y=..density..))+ 
-          geom_histogram(binwidth=2, colour="#999999", fill="white") + 
-          geom_density(alpha=.2, fill="white", colour="#333333")  
-    
-    p <- print(m)
-    
-    temp = which((p$data[[2]]$x > upper) == TRUE, arr.ind=TRUE)
-    dd1 = p$data[[2]][temp,]
-    temp = which((p$data[[2]]$x < upper) == TRUE, arr.ind=TRUE)
-    dd2 = p$data[[2]][temp,]
-    
-    m <- m + layer(data = dd1, mapping = aes(x=x, y=y), geom = "area", geom_params=list(fill="red" ,alpha=.3))+
-      layer(data = dd2, mapping = aes(x=x, y=y), geom = "area", geom_params=list(fill="white" ,alpha=.3)) 
-    
+    # Use density
+    permPlot <- ggplot(data=permAcc, aes(x=Accuracies, y=..density..))+ 
+                geom_histogram(binwidth=2, colour="#999999", fill="white") + 
+                geom_density(alpha=.2, fill="white", colour="#333333")  
   } else {
-    m <- ggplot(permAcc, aes(x=Accuracies, y=..count..)) + 
-      geom_histogram(binwidth=2, colour="#999999", fill="white")
+    # Use frequency/counts
+    permPlot <- ggplot(data=permAcc, aes(x=Accuracies, y=..count..)) + 
+                geom_histogram(binwidth=2, colour="#999999", fill="white")
   }
   
+  # Plot the percentiles 
   if (percentiles == TRUE){
-    m <- m + geom_vline(xintercept=lower, color="purple", linetype="dashed", size=0.8) + 
-      geom_vline(xintercept=upper, color="purple", linetype="dashed", size=0.8)  
+    permPlot <- permPlot + geom_vline(xintercept=lower, color="purple", linetype="dashed", size=0.8) + 
+                           geom_vline(xintercept=upper, color="purple", linetype="dashed", size=0.8)  
   }
   
-  if (mean == TRUE){
-    m <- m + geom_vline(xintercept=mean(permObj$avgTestAcc), color="red", linetype="dashed", size=0.8) 
-  }
+  # Plot the mean 
+  if (mean == TRUE) { permPlot <- permPlot + geom_vline(xintercept=mean(permObj$avgAcc), color="red", linetype="dashed", size=0.8) } 
   
-  if (median == TRUE){
-    m <- m + geom_vline(xintercept=median(permObj$avgTestAcc), color="cyan", linetype="dashed", size=0.8) 
-  }
+  # Plot the median 
+  if (median == TRUE) { permPlot <- permPlot + geom_vline(xintercept=median(permObj$avgAcc), color="cyan", linetype="dashed", size=0.8) }
   
-  return (m)
+  return (permPlot)
 }

@@ -1,18 +1,24 @@
+# ************************************************************************
+# Function for parallelisation of the classification ensemble 
+# ************************************************************************
+
 .snowRBF <- function(inputData, inputClass, bootNum, ensNum, parallel, cpus, type, socketHosts) {
   tryCatch({
-    sfInit( parallel = parallel, cpus = cpus, type = type, socketHosts = socketHosts)
+    # Initialisation using given specs from user
+    sfInit(parallel=parallel, cpus=cpus, type=type, socketHosts=socketHosts)
     
     # Send the libraries
     sfLibrary("neldermead", character.only=TRUE)
     sfLibrary("e1071",      character.only=TRUE)
     sfLibrary("boot",       character.only=TRUE)
     
-    parComplexRes <- sfLapply(1:ensNum, .boxRadial, inputData, inputClass, bootNum)
+    # Parallelise the .boxRadial function, ensNum times
+    # Pass additional arguments: inputData, inputClass, bootNum
+    parRBFobj <- sfLapply(1:ensNum, .boxRadial, inputData, inputClass, bootNum)
     
-    return(parComplexRes)
+    return(parRBFobj)
     
-    message(paste("Analysis Complete in", parComplexRes$runTime, "seconds" , sep=" "))
-    
+    # Terminate 
     sfStop()
   }, finally=sfStop())
 }

@@ -28,15 +28,16 @@ irisData  <- iris[,-5]
 ens <- cfBuild(inputData = irisData, inputClass = irisClass, bootNum = 100, 
                ensNum = 100, parallel = TRUE, cpus = 4, type = "SOCK")
 
+# Get the attributes provided by the getAcc function
 attributes(getAcc(ens))
 
-# Get the test and train accuracies of the classifiers in the ensemble
+# Get both the vectors of test and train accuracies from the classifiers in the ensemble
 getAcc(ens)
 
-# Get the test accuracies of the classifiers in the ensemble
+# Get the vector of test accuracies from the classifiers in the ensemble
 getAcc(ens)$Test
 
-# Get the train accuracies of the classifiers in the ensemble
+# Get the vector of train accuracies from the classifiers in the ensemble
 getAcc(ens)$Train
 }
 }

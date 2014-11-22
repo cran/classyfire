@@ -24,9 +24,10 @@ irisData  <- iris[,-5]
 
 ens <- cfBuild(irisData, irisClass, bootNum = 100, ensNum = 100, parallel = TRUE, 
                cpus = 4, type = "SOCK")
-               
-optim <- getOptParam(ens)
-optim
+
+# Get the optimal SVM hyperparameters of the classification ensemble
+optParam <- getOptParam(ens)
+optParam
 }
 }
 \keyword{array}

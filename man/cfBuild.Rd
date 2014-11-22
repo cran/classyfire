@@ -10,8 +10,8 @@ The \code{cfBuild} function creates a highly optimised ensemble of radial basis 
 \usage{
 cfBuild(inputData, inputClass, ...)
 
-\method{cfBuild}{default}(inputData, inputClass, bootNum = 100, ensNum = 100, 
-      	parallel=TRUE, cpus = NULL, type = "SOCK", socketHosts = NULL, ...)
+\method{cfBuild}{default}(inputData, inputClass, bootNum = 100, ensNum = 100, parallel=TRUE, 
+        cpus = NULL, type = "SOCK", socketHosts = NULL, ...)
 }
 \arguments{
   \item{inputData}{The input data matrix as provided by the user (mandatory field).}
@@ -20,29 +20,25 @@ cfBuild(inputData, inputClass, ...)
   \item{ensNum}{The number of classifiers that form the classification ensemble. By default, the ensNum value is set to 100.}
   \item{parallel}{Boolean value that determines parallel or sequential execution. By default set to \code{TRUE}. For more details, see \link{sfInit}.}
   \item{cpus}{Numeric value that provides the number of CPUs requested for the cluster. For more details, see \link{sfInit}.}
-  \item{type}{The type of cluster. It can take the values 'SOCK', 'MPI', 'PVM' or 'NWS'. By default, type is equal to 'SOCK'. For more details, see \link{sfInit}.}
+  \item{type}{The type of cluster. It can take the values `SOCK', `MPI', `PVM' or `NWS'. By default, type is equal to `SOCK'. For more details, see \link{sfInit}.}
   \item{socketHosts}{Host list for socket clusters. Only needed for socketmode (SOCK) and if using more than one machines (if using only your local machine (localhost) no list is needed). For more details, see \link{sfInit}.}
   \item{...}{The remaining optional fields.}
 }
 \value{
 The \code{cfBuild} function returns an object in the form of an R list. The attributes of the list can be accessed by executing the \link{attributes} command. More specifically, the list of attributes includes:
-  \item{testAcc}{The test accuracy (\%CC) of a single classifier in the ensemble.}
-	\item{trainAcc}{The train accuracy of a single classifier in the ensemble.}
-	\item{optGamma}{Optimal gamma value for a single SVM model}
-  \item{optCost}{Optimal cost value for a single SVM model}
-  \item{runTime}{The execution time for a single classifier within the ensemble.}
-  \item{confMatr}{The confusion matrix of a single classifier.}
-	\item{propTable}{Similar to the confusion matrix, the per class (\%) accuracies.}
-	\item{predClass}{The vector of classes for the test class as predicted by the SVM model.}
-	\item{testClass}{The vector of true classes of the test class.}
+  \item{testAcc}{A vector of the test accuracies (\%CC) of the single classifiers in the ensemble.}
+	\item{trainAcc}{A vector of the train accuracies of the single classifiers in the ensemble.}
+	\item{optGamma}{A vector of the optimal gamma values.}
+  \item{optCost}{A vector of the optimal cost values.}
+  \item{totalTime}{The overall execution time of the ensemble in seconds.}
+  \item{runTime}{The individual execution times of the classifiers within the ensemble in seconds.}
+  \item{confMatr}{A list featuring the confusion matrices of the classifiers in the ensemble.}
+	\item{predClasses}{A list with the vectors of predicted classes as predicted by each classifier.}
+	\item{testClasses}{A list with the vectors of true classes of the test class.}
 	\item{missNames}{In case that the names of the samples (rows) are supplied in the input data matrix, the \code{missNames} attribute returns the names of the missclassified samples.}
 	\item{accNames}{In case that the names of the samples (rows) are supplied in the input data matrix, the \code{accNames} attribute returns the names of the correctly classified samples.}
-	\item{trainClass}{The vector of classes used in the training of the SVM.}
-	\item{testData}{The data matrix (individual test set) used for testing.}
-	\item{trainData}{The data matrix (individual test set) used for training.}
-	\item{testSamples}{The randomly selected samples (rows) that were used in this instance to create the train and test data.}
-	\item{bootObj}{The matrix of bootstrapped samples based on the provided \code{bootNum}.}
-	\item{svmModel}{The created SVM model as an R object.}
+	\item{testIndx}{The randomly selected samples (rows) that were used in this instance to create the train and test data.}
+	\item{svmModel}{A list containing the generated SVM models in the ensemble.}
 }
 \details{For a given input dataset \eqn{D}, a random fraction of samples is removed and kept aside as an independent test set during the training process of the model. This selection of samples forms the dataset \eqn{D_{test}}{Dtest}. This test set typically comprises a third of the original samples. Using a stratified holdout approach, the test set consists of the same balance of sample classes as the initial dataset \eqn{D}. The remaining samples that are not selected, form the training set \eqn{D_{train}}{Dtrain}. Since the test set is kept aside during the whole training process, the risk of overfitting is minimised.\cr\cr
 In the case of bootstrapping, a bootstrap training set \eqn{D_{bootTrain}}{DbootTrain} is created by randomly picking \eqn{n} samples with replacement from the training dataset \eqn{D_{train}}{Dtrain}. The total size of \eqn{D_{bootTrain}}{DbootTrain} is equal to the size of \eqn{D_{train}}{Dtrain}. Since bootstrapping is based on sampling with replacement, any given sample could be present multiple times within the same bootstrap training set. The remaining samples not found in the bootstrap training set make up the bootstrap test set \eqn{D_{bootTest}}{DbootTest}. To avoid reliance on one specific bootstrapping split, bootstrapping is repeated at least \eqn{bootNum} times until a clear winning parameter combination emerges. \cr\cr
@@ -128,34 +124,23 @@ irisData  <- iris[,-5]
 ens <- cfBuild(inputData = irisData, inputClass = irisClass, bootNum = 100, 
                ensNum = 100, parallel = TRUE, cpus = 4, type = "SOCK")
 
-# The size of the classification ensemble
-length(ens)
-
 # List of attributes available for each classifier in the ensemble
-attributes(ens[[1]])
+attributes(ens)
 
-# The test accuracy of one individual classifier in the ensemble 
-round(ens[[1]]$testAcc, digits=2)
-
-# The train accuracy of one individual classifier in the ensemble 
-round(ens[[1]]$trainAcc, digits=2)
-
-# All the test accuracies and the average test accuracy in the ensemble
-getAcc(ens)$Test
+# Get the overall average Test and Train accuracy
 getAvgAcc(ens)$Test
-
-# All the train accuracies and the average train accuracy in the ensemble
-getAcc(ens)$Train
 getAvgAcc(ens)$Train
+
+# Get all the test accuracies and the average test accuracy in the ensemble
+ens$testAcc    # alternatively, getAcc(ens)$Test
+ens$trainAcc   # alternatively, getAcc(ens)$Train
 
 # Randomly generate test data to find out their classes using the generated ensemble
 # 400 points are selected at random, which results in 100 samples (rows).
-
-testMatr <-matrix(runif(400)*100, ncol = ncol(irisData))           
-
 # Predict the classes of the data using the classifiers in the constructed ensemble
 
-predRes <- cfPredict(ens, testMatr)
+testMatr <- matrix(runif(400)*100, ncol = ncol(irisData))           
+predRes  <- cfPredict(ens, testMatr)
 }
 }
 \keyword{classif}

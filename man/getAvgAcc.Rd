@@ -28,6 +28,7 @@ irisData  <- iris[,-5]
 ens <- cfBuild(inputData = irisData, inputClass = irisClass, bootNum = 100, 
                ensNum = 100, parallel = TRUE, cpus = 4, type = "SOCK")
 
+# Get the attributes provided by the getAvgAcc function
 attributes(getAvgAcc(ens))
 
 # Get the average test and train accuracies within the ensemble

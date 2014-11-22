@@ -12,13 +12,13 @@ The aim of the \code{classyfire} package is to improve the quality of multivaria
 \tabular{ll}{
 Package: \tab classyfire\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2014-09-03\cr
+Version: \tab 0.1-1\cr
+Date: \tab 2014-11-22\cr
 License: \tab GPL (>= 2)\cr
 }
 }
 \author{
-Adapted functionality by Eleni Chatzimichali (ea.chatzimichali@gmail.com)\cr
+Adapted functionality by Eleni Chatzimichali (ea.chatzimichali@gmail.com)\cr \cr
 Author of the SVM functions: David Meyer (<David.Meyer@R-project.org>)\cr
 (based on C/C++-code by Chih-Chung Chang and Chih-Jen Lin)\cr
 Author of Scilab neldermead module: Michael Baudin (INRIA - Digiteo)\cr

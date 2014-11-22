@@ -31,8 +31,13 @@ irisData  <- iris[,-5]
 ens <- cfBuild(irisData, irisClass, bootNum = 100, ensNum = 100, parallel = TRUE, 
                cpus = 4, type = "SOCK")
 
+# Basic histogram of the test accuracies in the ensemble
 ggEnsHist(ens)
+
+# Density plot of the test accuracies in the ensemble
 ggEnsHist(ens, density = TRUE)
+
+# Density plot that highlights additional descriptive statistics
 ggEnsHist(ens, density = TRUE, percentiles=TRUE)
 ggEnsHist(ens, density = TRUE, percentiles=TRUE, mean=TRUE)
 ggEnsHist(ens, density = TRUE, percentiles=TRUE, median=TRUE)
