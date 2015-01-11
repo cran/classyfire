@@ -18,7 +18,7 @@ ggEnsHist(ensObj, density = FALSE, percentiles = FALSE, mean = FALSE, median = F
 }
 \seealso{
   \code{
-    \link{ggEnsHist}
+    \link{ggPermHist}
   }
 }
 \examples{

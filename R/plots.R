@@ -6,17 +6,18 @@
 #    ggEnsHist:     Histogram of the ensemble results
 #    ggClassPred:   Barplots of the Correctly Classified Samples
 #    ggPermHist:    Histogram of permutation results
-#
+#    ggFusedHist:   Fused histogram of permutation and ensemble results
 # ************************************************************************
 
 
 # Plot the average test accuracies for every new classifier added in the ensemble
 ggEnsTrend <- function(ensObj, xlabel = NULL, ylabel=NULL, showText=FALSE, xlims=NULL, ylims= NULL){
-  Ensemble <- AvgAcc <- NULL 
+  .argsCheck(ensObj, "cfBuild")
   
-  ensAcc  <- getAcc(ensObj)$Test
-  meanVal <- ensAcc[1]
-  ensNum  <- length(getAcc(ensObj)$Test)
+  Ensemble <- AvgAcc <- NULL 
+  ensAcc   <- getAcc(ensObj)$Test
+  meanVal  <- ensAcc[1]
+  ensNum   <- length(getAcc(ensObj)$Test)
   
   # Calculate the average accuracies for every added classifier 
   for (i in 2:length(ensAcc)) {
@@ -51,6 +52,8 @@ ggEnsTrend <- function(ensObj, xlabel = NULL, ylabel=NULL, showText=FALSE, xlims
 
 # Histogram of the ensemble results 
 ggEnsHist <- function (ensObj, density = FALSE, percentiles = FALSE, mean = FALSE, median = FALSE) {
+  .argsCheck(ensObj, "cfBuild")
+  
   Accuracies <- ..density.. <- ..count.. <- NULL 
   
   # Get the accuracies within the ensemble and the average accuracy
@@ -91,6 +94,8 @@ ggEnsHist <- function (ensObj, density = FALSE, percentiles = FALSE, mean = FALS
 
 # Barplots of the Correctly Classified Samples
 ggClassPred <- function(ensObj, position = "stack", displayAll = FALSE, showText=FALSE, xlabel = NULL, ylabel=NULL, cbPalette = FALSE, fillBrewer = FALSE) {
+  .argsCheck(ensObj, "cfBuild")
+  
   InitClass <- PredClass <- Class <- Percentage <- predictions <- classPlot <- NULL 
   
   # Define a color-blind-friendly palette 
@@ -146,6 +151,8 @@ ggClassPred <- function(ensObj, position = "stack", displayAll = FALSE, showText
 
 # Histogram of permutation results 
 ggPermHist <- function(permObj, density = FALSE, percentiles = FALSE, mean = FALSE, median = FALSE) {
+  .argsCheck(permObj, "cfPermute")
+  
   Accuracies <- x <- y <- ..density.. <- ..count.. <- NULL 
   
   # Get the permutation results and store in a data frame
@@ -181,3 +188,22 @@ ggPermHist <- function(permObj, density = FALSE, percentiles = FALSE, mean = FAL
   
   return (permPlot)
 }
+
+
+ggFusedHist <- function(ensObj, permObj) {
+  .argsCheck(ensObj, "cfBuild")
+  .argsCheck(permObj, "cfPermute")
+  
+  acc <- type <- NULL
+  
+  fusedMatr <- rbind( cbind(rep("permutation", length(permObj$avgAcc)), permObj$avgAcc), cbind(rep("ensemble", length(ensObj$testAcc)), ensObj$testAcc))
+  fusedMatr <- as.data.frame(fusedMatr)
+  colnames(fusedMatr) <- c("type", "acc")
+  
+  ggHist <- ggplot(data=fusedMatr, aes(x=as.numeric(as.vector(acc)), fill=type, colour=type)) + 
+            geom_histogram(binwidth=2, alpha=.6, colour="#999999") + theme_bw() + scale_fill_manual(values = c("red", "blue")) + 
+            xlab("Overall Test Accuracies (%CC)") + ylab("Frequency\n") + theme(legend.position = "none") 
+  
+  return (ggHist)
+}
+
